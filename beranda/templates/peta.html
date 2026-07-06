@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard WebGIS Tematik Jawa Barat 2024</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        /* CSS Reset & Layout Utama */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f9; color: #333; }
+        
+        /* Header Dashboard */
+        .navbar { background-color: #212529; color: #fff; padding: 18px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .navbar-brand { font-size: 1.5rem; font-weight: bold; }
+        .navbar-text { color: rgba(255,255,255,0.6); font-size: 1rem; }
+
+        /* Grid System Dashboard */
+        .dashboard-container { display: grid; grid-template-columns: 340px 1fr; gap: 20px; padding: 20px; height: calc(100vh - 70px); }
+        
+        /* Sidebar Styles */
+        .sidebar { display: flex; flex-direction: column; gap: 15px; }
+        .card { background: #fff; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e3e6f0; }
+        .card-stats { border-left: 5px solid #0d6efd; }
+        
+        .card-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 8px; color: #1e293b; } 
+        .text-muted { color: #576574; font-size: 0.95rem; line-height: 1.4; }
+        .text-uppercase { text-transform: uppercase; letter-spacing: 0.5px; }
+        .small { font-size: 0.9rem; }
+        .fw-bold { font-weight: bold; }
+        
+        .sidebar-list { padding-left: 20px; margin-top: 12px; }
+        .sidebar-list li { margin-bottom: 12px; font-size: 0.95rem; color: #334155; line-height: 1.5; }
+
+        .group-tag { text-align: center; font-size: 13px; color: #64748b; font-family: monospace; font-weight: bold; }
+
+        /* Map Container */
+        .map-container { background: #fff; border-radius: 8px; padding: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e3e6f0; }
+        #map { height: 100%; width: 100%; border-radius: 6px; min-height: 580px; }
+        
+        /* Menu Layer Kontrol (Kanan Atas) */
+        .leaflet-control-layers { padding: 12px 16px !important; font-size: 14px !important; font-weight: bold !important; border-radius: 8px !important; box-shadow: 0 4px 10px rgba(0,0,0,0.15) !important; }
+        .leaflet-control-layers label { margin-bottom: 8px !important; cursor: pointer; }
+        .leaflet-control-layers-list input { transform: scale(1.3); margin-right: 8px !important; cursor: pointer; }
+
+        /* Style Popup di Dalam Peta */
+        .leaflet-popup-content-wrapper { border-radius: 8px; padding: 8px; max-width: 280px; }
+        .leaflet-popup-content h3 { font-size: 1.2rem; margin-bottom: 6px; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; }
+        .leaflet-popup-content p { font-size: 1rem; color: #334155; margin-top: 5px; line-height: 1.4; }
+
+        /* Style untuk Legenda Leaflet (Kanan Bawah) */
+        .info.legend { background: white; padding: 12px; font-size: 13px; line-height: 22px; color: #333; background: rgba(255, 255, 255, 0.95); box-shadow: 0 0 15px rgba(0,0,0,0.2); border-radius: 6px; font-weight: 500; }
+        .info.legend i { width: 20px; height: 20px; float: left; margin-right: 8px; opacity: 0.8; }
+        
+        /* Responsive Grid */
+        @media (max-width: 992px) {
+            .dashboard-container { grid-template-columns: 1fr; height: auto; }
+            #map { height: 500px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header class="navbar">
+        <div class="navbar-brand">🗺️ WebGIS Provinsi Jawa Barat 2024</div>
+        <div class="navbar-text">Tugas UAS Sistem Informasi Geografis</div>
+    </header>
+
+   <!-- Main Dashboard Container -->
+    <main class="dashboard-container">
+        <!-- Sidebar Panel Info -->
+        <section class="sidebar">
+            <div class="card card-stats">
+                <div class="text-muted text-uppercase small fw-bold">Wilayah Fokus</div>
+                <div class="card-title">Jawa Barat</div>
+                <p class="text-muted small">Mencakup data tematik spasial tingkat Kabupaten/Kota tahun 2024.</p>
+            </div>
+            
+            <div class="card">
+                <div class="fw-bold text-muted text-uppercase small" style="margin-bottom: 10px; border-bottom: 1px solid #e3e6f0; padding-bottom: 5px;">💡 Petunjuk Fitur</div>
+                <ul class="sidebar-list">
+                    <li>Gunakan <b>Tombol Layer Kontrol</b> di pojok kanan atas peta untuk mengganti indikator data spasial secara keseluruhan.</li>
+                    <li>Gunakan <b>Kotak Pencarian Spesifik</b> di atas peta untuk menyorot dan mengisolasi wilayah tertentu secara mandiri.</li>
+                </ul>
+            </div>
+
+            <div class="card group-tag">
+                Anggota Kelompok:<br>
+                1. Alim Rifai &mdash; 0110122068<br>
+                2. Nurul Maedatul Awaliah
+            </div>
+        </section>
+
+        <!-- Map View Panel dengan Search Bar Terpisah -->
+        <section class="map-container" style="display: flex; flex-direction: column; gap: 10px;">
+            <!-- FITUR BARU: Komponen Mesin Pencari Spasial -->
+            <div style="display: flex; gap: 8px; background: #fff; padding: 10px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #e3e6f0;">
+                <input type="text" id="inputSearchSpasial" placeholder="Ketik nama wilayah (Contoh: Indramayu, Bogor, dll)..." style="flex: 1; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 14px;">
+                <button onclick="cariWilayahSpasial()" style="background: #212529; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px;">Cari Wilayah</button>
+                <button onclick="resetPencarianSpasial()" style="background: #ef4444; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px;">Reset</button>
+            </div>
+            <div id="map" style="flex: 1;"></div>
+        </section>
+    </main>
+
+    {% load static %}
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Inisialisasi Map utama langsung fokus di Jawa Barat
+        var map = L.map('map').setView([-6.9175, 107.6191], 8.5);
+
+        var baseTile = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        // 1. LOGIKA PEWARNAAN TEMATIK
+        function getColorKemiskinan(d) {
+            return d > 11.0  ? '#252525' :
+                   d > 9.5   ? '#636363' :
+                   d > 7.5   ? '#969696' :
+                   d > 5.0   ? '#cccccc' :
+                               '#ffffff';
+        }
+
+        function getColorKepadatan(d) {
+            return d > 8000 ? '#7f0000' :
+                   d > 3000 ? '#d7301f' :
+                   d > 1500 ? '#ef6548' :
+                   d > 800  ? '#fdbb84' :
+                              '#fef0d9';
+        }
+
+        function getColorIPM(d) {
+            return d > 78.0 ? '#00441b' :
+                   d > 75.0 ? '#2a924a' :
+                   d > 72.0 ? '#74c476' :
+                   d > 69.0 ? '#a1d99b' :
+                              '#e5f5e0';
+        }
+
+        // 2. LAYER GEOJSON UTAMA
+        var layerKemiskinan, layerKepadatan, layerIPM;
+        var activeAspect = 'kemiskinan'; // Standar aspek default pertama kali
+
+        fetch("{% static 'geojson/jabar.geojson' %}")
+            .then(response => response.json())
+            .then(geojsonData => {
+                
+                // --- SETUP LAYER KEMISKINAN ---
+                layerKemiskinan = L.geoJSON(geojsonData, {
+                    style: styleKemiskinanDefault,
+                    onEachFeature: onEachFeatureKemiskinan
+                }).addTo(map);
+
+                // --- SETUP LAYER KEPADATAN PENDUDUK ---
+                layerKepadatan = L.geoJSON(geojsonData, {
+                    style: styleKepadatanDefault,
+                    onEachFeature: onEachFeatureKepadatan
+                });
+
+                // --- SETUP LAYER IPM ---
+                layerIPM = L.geoJSON(geojsonData, {
+                    style: styleIPMDefault,
+                    onEachFeature: onEachFeatureIPM
+                });
+
+                // Fungsi Styles & Popups Terpisah agar bisa dipanggil ulang oleh mesin pencari
+                function styleKemiskinanDefault(feature) {
+                    var val = feature.properties.Penduduk_Miskin || 0;
+                    return { fillColor: getColorKemiskinan(val), weight: 1.5, opacity: 1, color: 'white', fillOpacity: 0.85 };
+                }
+                function onEachFeatureKemiskinan(feature, layer) {
+                    var name = feature.properties.WADMKK || "Wilayah Jabar";
+                    var val = feature.properties.Penduduk_Miskin || 0;
+                    layer.bindPopup("<h3>📍 Kab/Kota: " + name + "</h3><p><b>Tingkat Kemiskinan:</b> " + parseFloat(val).toFixed(2) + " %</p><p style='font-size:11px; color:#64748b; margin-top:5px; border-top:1px dashed #e2e8f0; padding-top:4px;'><i>Cakupan wilayah spasial berdasarkan rilis data makro BPS Provinsi Jawa Barat.</i></p>");
+                }
+
+                function styleKepadatanDefault(feature) {
+                    var val = feature.properties.Kepadatan_Penduduk || 0;
+                    return { fillColor: getColorKepadatan(val), weight: 1.5, opacity: 1, color: 'white', fillOpacity: 0.85 };
+                }
+                function onEachFeatureKepadatan(feature, layer) {
+                    var name = feature.properties.WADMKK || "Wilayah Jabar";
+                    var val = feature.properties.Kepadatan_Penduduk || 0;
+                    layer.bindPopup("<h3>📍 Kab/Kota: " + name + "</h3><p><b>Kepadatan Penduduk:</b> " + parseInt(val).toLocaleString('id-ID') + " Jiwa/km²</p><p style='font-size:11px; color:#64748b; margin-top:5px; border-top:1px dashed #e2e8f0; padding-top:4px;'><i>Keterangan: Rasio perbandingan total jumlah penduduk dibagi dengan luas wilayah daratan per km².</i></p>");
+                }
+
+                function styleIPMDefault(feature) {
+                    var val = feature.properties.Nilai_IPM || 0;
+                    return { fillColor: getColorIPM(val), weight: 1.5, opacity: 1, color: 'white', fillOpacity: 0.85 };
+                }
+                function onEachFeatureIPM(feature, layer) {
+                    var name = feature.properties.WADMKK || "Wilayah Jabar";
+                    var val = feature.properties.Nilai_IPM || 0;
+                    layer.bindPopup("<h3>📍 Kab/Kota: " + name + "</h3><p><b>Indeks Pembangunan Manusia (IPM):</b> " + parseFloat(val).toFixed(2) + "</p><p style='font-size:11px; color:#64748b; margin-top:5px; border-top:1px dashed #e2e8f0; padding-top:4px;'><i>Keterangan: Mengukur dimensi umur panjang, tingkat pengetahuan, dan standar hidup layak.</i></p>");
+                }
+
+                // 3. LAYER CONTROLLER (TOMBOL KANAN ATAS)
+                var petaTematik = {
+                    "📊 Data Tingkat Kemiskinan": layerKemiskinan,
+                    "👥 Data Kepadatan Penduduk": layerKepadatan,
+                    "📈 Data Indeks Manusia (IPM)": layerIPM
+                };
+
+                L.control.layers(petaTematik, null, { collapsed: false, position: 'topright' }).addTo(map);
+                updateLegend('kemiskinan');
+
+                // 4. LOGIKA MESIN PENCARI UTAMA (Penyaringan Spasial)
+                window.cariWilayahSpasial = function() {
+                    var query = document.getElementById('inputSearchSpasial').value.toLowerCase().trim();
+                    if (query === "") return;
+
+                    // Deteksi layer aktif saat ini di layar
+                    var activeLayer;
+                    if (map.hasLayer(layerKemiskinan)) activeLayer = layerKemiskinan;
+                    else if (map.hasLayer(layerKepadatan)) activeLayer = layerKepadatan;
+                    else if (map.hasLayer(layerIPM)) activeLayer = layerIPM;
+
+                    var targetLayer = null;
+
+                    activeLayer.eachLayer(function(layer) {
+                        var namaWilayah = (layer.feature.properties.WADMKK || "").toLowerCase();
+                        
+                        if (namaWilayah.includes(query)) {
+                            targetLayer = layer;
+                            // Naikkan opacity wilayah target agar menonjol
+                            layer.setStyle({ weight: 2.5, color: '#000', fillOpacity: 0.9 });
+                        } else {
+                            // Wilayah lain langsung dibuat transparan total (fillOpacity: 0)
+                            layer.setStyle({ fillOpacity: 0, opacity: 0.2, color: '#cbd5e1' });
+                        }
+                    });
+
+                    // Jika wilayah ditemukan, geser kamera dan buka popup otomatis
+                    if (targetLayer) {
+                        map.fitBounds(targetLayer.getBounds());
+                        targetLayer.openPopup();
+                    } else {
+                        alert("Wilayah '" + query + "' tidak ditemukan. Periksa kembali ejaannya.");
+                    }
+                };
+
+                // Fungsi mengembalikan peta ke kondisi semula
+                window.resetPencarianSpasial = function() {
+                    document.getElementById('inputSearchSpasial').value = "";
+                    
+                    layerKemiskinan.eachLayer(function(layer) { layer.setStyle(styleKemiskinanDefault(layer.feature)); });
+                    layerKepadatan.eachLayer(function(layer) { layer.setStyle(styleKepadatanDefault(layer.feature)); });
+                    layerIPM.eachLayer(function(layer) { layer.setStyle(styleIPMDefault(layer.feature)); });
+                    
+                    map.setView([-6.9175, 107.6191], 8.5);
+                };
+            })
+            .then(null, err => console.error("Error GeoJSON load:", err));
+
+        // 5. DYNAMIC LEGEND
+        var legendControl = L.control({ position: 'bottomright' });
+
+        function updateLegend(type) {
+            legendControl.onAdd = function (map) {
+                var div = L.DomUtil.create('div', 'info legend');
+                var grades, colors, title;
+
+                if (type === 'kemiskinan') {
+                    title = '<b>Persentase Kemiskinan (%)</b><br>';
+                    grades = [2.38, 5.0, 7.5, 9.5, 11.0];
+                    colors = ['#ffffff', '#cccccc', '#969696', '#636363', '#252525'];
+                } else if (type === 'kepadatan') {
+                    title = '<b>Kepadatan (Jiwa/km²)</b><br>';
+                    grades = [425, 804, 1500, 3000, 8000];
+                    colors = ['#fef0d9', '#fdbb84', '#ef6548', '#d7301f', '#7f0000'];
+                } else {
+                    title = '<b>Indeks Manusia (IPM)</b><br>';
+                    grades = [67.0, 69.0, 72.0, 75.0, 78.0];
+                    colors = ['#e5f5e0', '#a1d99b', '#74c476', '#2a924a', '#00441b'];
+                }
+
+                div.innerHTML = title;
+                for (var i = 0; i < grades.length; i++) {
+                    div.innerHTML += '<i style="background:' + colors[i] + '"></i> ' +
+                        grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+                }
+                return div;
+            };
+            legendControl.addTo(map);
+        }
+
+        map.on('baselayerchange', function (eventLayer) {
+            map.removeControl(legendControl);
+            if (eventLayer.name === "📊 Data Tingkat Kemiskinan") {
+                activeAspect = 'kemiskinan';
+                updateLegend('kemiskinan');
+            } else if (eventLayer.name === "👥 Data Kepadatan Penduduk") {
+                activeAspect = 'kepadatan';
+                updateLegend('kepadatan');
+            } else if (eventLayer.name === "📈 Data Indeks Manusia (IPM)") {
+                activeAspect = 'ipm';
+                updateLegend('ipm');
+            }
+        });
+    </script>
+</body>
+</html>

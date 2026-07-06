@@ -1,0 +1,28 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <h2>Database Overview</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 16px;">
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center;">
+            <h3 style="margin: 0; color: #333;">{{ provinsi_count }}</h3>
+            <p style="margin: 5px 0 0; color: #666;">Provinces</p>
+        </div>
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center;">
+            <h3 style="margin: 0; color: #333;">{{ kabkota_count }}</h3>
+            <p style="margin: 5px 0 0; color: #666;">Regencies/Cities</p>
+        </div>
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center;">
+            <h3 style="margin: 0; color: #333;">{{ kecamatan_count }}</h3>
+            <p style="margin: 5px 0 0; color: #666;">Districts</p>
+        </div>
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center;">
+            <h3 style="margin: 0; color: #333;">{{ datprof_count }}</h3>
+            <p style="margin: 5px 0 0; color: #666;">Data Records</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
